@@ -1,0 +1,171 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:news_app/models/Categories_new_model.dart';
+import '../view_models/news_view_model.dart';
+
+class CategoriesScreen extends StatefulWidget {
+  const CategoriesScreen({Key? key}) : super(key: key);
+
+  @override
+  State<CategoriesScreen> createState() => _CategoriesScreenState();
+}
+
+class _CategoriesScreenState extends State<CategoriesScreen> {
+  NewsViewModel newsViewModel = NewsViewModel();
+
+  String categoryName = 'General';
+
+  List<String> categoriesList = [
+    'General',
+    'Entertainment',
+    'Health',
+    'Sport',
+    'Business',
+    'Technology'
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 50,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: categoriesList.length,
+                itemBuilder: (context, index) {
+                  return InkWell(
+                    onTap: () {
+                      categoryName = categoriesList[index];
+                      setState(() {});
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: categoryName == categoriesList[index]
+                              ? Colors.blue
+                              : Colors.grey,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Center(
+                            child: Text(
+                              categoriesList[index],
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            Expanded(
+              child: FutureBuilder<CategoriesNewsModel>(
+                future: newsViewModel.fetchCategoriesNewsApi(categoryName),
+                builder: (BuildContext context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: SpinKitCircle(
+                        size: 40,
+                        color: Colors.blue,
+                      ),
+                    );
+                  } else {
+                    return ListView.builder(
+                      itemCount: snapshot.data!.articles!.length,
+                      itemBuilder: (context, index) {
+                        final article = snapshot.data!.articles![index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 15),
+                          child: Card(
+                            child: Column(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: CachedNetworkImage(
+                                    imageUrl: article.urlToImage ?? '',
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const Center(
+                                          child: SpinKitCircle(
+                                            size: 40,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(
+                                          Icons.error_outline,
+                                          color: Colors.red,
+                                        ),
+                                  ),
+                                ),
+                                // Display Date and Time
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    DateFormat('dd-MM-yyyy HH:mm').format(
+                                      DateTime.parse(
+                                        article.publishedAt ?? DateTime.now().toString(),
+                                      ),
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                                // Add Article Title
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    article.title ?? 'No Title Available',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                // Add Article Description
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    article.description ?? 'No Description Available',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                // Add more widgets here as needed
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
